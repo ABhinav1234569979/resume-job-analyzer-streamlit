@@ -1,9 +1,11 @@
-﻿import os
+import os
 import re
 import tempfile
 
 import fitz
 from flask import Flask, render_template, request
+
+from resume_validator import validate_resume_with_ollama
 
 
 app = Flask(__name__)
@@ -76,20 +78,35 @@ SKILL_ALIASES = {
 
 
 def extract_pdf_text(pdf_path):
-    """Extract text from a text-based PDF."""
+    """Validate the PDF structure and extract readable text."""
+
+    with open(pdf_path, "rb") as pdf_file:
+        header = pdf_file.read(1024)
+
+    if b"%PDF-" not in header:
+        raise ValueError(
+            "The uploaded file does not contain a valid PDF signature."
+        )
 
     document = fitz.open(pdf_path)
 
     try:
         if document.needs_pass:
-            raise ValueError("The uploaded PDF is password protected.")
+            raise ValueError(
+                "The uploaded PDF is password protected."
+            )
 
-        text = []
+        if document.page_count == 0:
+            raise ValueError(
+                "The uploaded PDF contains no pages."
+            )
+
+        pages = []
 
         for page in document:
-            text.append(page.get_text("text"))
+            pages.append(page.get_text("text"))
 
-        return "\n".join(text).strip()
+        return "\n".join(pages).strip()
 
     finally:
         document.close()
@@ -222,6 +239,41 @@ def analyze():
                 )
             )
 
+        resume_validation = validate_resume_with_ollama(
+            resume_text
+        )
+
+        confidence_percent = round(
+            resume_validation.confidence * 100
+        )
+
+        accepted_document_types = {"resume", "cv"}
+
+        is_verified_resume = (
+            resume_validation.is_resume
+            and resume_validation.document_type
+            in accepted_document_types
+            and resume_validation.confidence >= 0.70
+        )
+
+        if not is_verified_resume:
+            readable_type = (
+                resume_validation.document_type
+                .replace("_", " ")
+                .title()
+            )
+
+            return render_template(
+                "index.html",
+                error=(
+                    "The uploaded PDF does not appear to be a "
+                    "genuine resume or CV. "
+                    f"Detected document type: {readable_type}. "
+                    f"Confidence: {confidence_percent}%. "
+                    f"{resume_validation.reason}"
+                )
+            )
+
         resume_skills = extract_skills(resume_text)
         job_skills = extract_skills(job_description)
 
@@ -245,6 +297,13 @@ def analyze():
 
         result = {
             "filename": resume_file.filename,
+            "resume_document_type": (
+                resume_validation.document_type
+            ),
+            "resume_confidence": confidence_percent,
+            "resume_sections": (
+                resume_validation.detected_sections
+            ),
             "score": score,
             "score_label": score_label,
             "score_color": score_color,
