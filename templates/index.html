@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Resume-to-Job Match Analyzer</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            ResumeMatch AI
+        </a>
+
+        <span class="navbar-text text-white-50">
+            Resume-to-Job Match Analyzer
+        </span>
+    </div>
+</nav>
+
+<header class="hero-section">
+    <div class="container text-center">
+        <span class="hero-badge">
+            ATS Compatibility Analyzer
+        </span>
+
+        <h1 class="display-4 fw-bold mt-3">
+            Tailor your resume for every opportunity
+        </h1>
+
+        <p class="lead hero-description">
+            Upload your resume and paste a job description to discover
+            matching skills, missing keywords, and actionable improvements.
+        </p>
+    </div>
+</header>
+
+<main class="container page-container">
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+        <strong>Analysis failed:</strong> {{ error }}
+
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+        ></button>
+    </div>
+    {% endif %}
+
+    <section class="card analyzer-card border-0 shadow-lg">
+        <div class="card-body p-4 p-lg-5">
+
+            <div class="row mb-4">
+                <div class="col">
+                    <h2 class="fw-bold">Analyze your resume</h2>
+
+                    <p class="text-muted mb-0">
+                        Upload a text-based PDF and paste the complete job
+                        description.
+                    </p>
+                </div>
+            </div>
+
+            <form
+                action="/analyze"
+                method="POST"
+                enctype="multipart/form-data"
+                onsubmit="showLoading()"
+            >
+                <div class="row g-4">
+
+                    <div class="col-lg-5">
+                        <label class="form-label fw-semibold">
+                            Resume PDF
+                        </label>
+
+                        <div class="upload-box">
+                            <div class="upload-icon">📄</div>
+
+                            <h5>Upload your resume</h5>
+
+                            <p class="small text-muted">
+                                PDF format, maximum 5 MB
+                            </p>
+
+                            <input
+                                class="form-control"
+                                type="file"
+                                name="resume"
+                                accept=".pdf,application/pdf"
+                                required
+                            >
+                        </div>
+
+                        <div class="privacy-box mt-3">
+                            <strong>Privacy:</strong>
+                            Your PDF is processed temporarily and deleted
+                            immediately after analysis.
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <label
+                            for="job_description"
+                            class="form-label fw-semibold"
+                        >
+                            Job Description
+                        </label>
+
+                        <textarea
+                            class="form-control job-textarea"
+                            id="job_description"
+                            name="job_description"
+                            placeholder="Paste the complete job description here..."
+                            required
+                        >{{ request.form.get('job_description', '') }}</textarea>
+                    </div>
+
+                </div>
+
+                <div class="text-center mt-4">
+                    <button
+                        id="analyzeButton"
+                        type="submit"
+                        class="btn btn-analyze btn-lg px-5"
+                    >
+                        Analyze Resume
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </section>
+
+    {% if result %}
+
+    <section id="results" class="results-section">
+
+        <div class="text-center mb-4">
+            <p class="text-uppercase result-eyebrow mb-2">
+                Analysis complete
+            </p>
+
+            <h2 class="fw-bold">Your Match Results</h2>
+
+            <p class="text-muted">
+                {{ result.filename }}
+            </p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+                <div class="card score-card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+
+                        <p class="text-uppercase text-muted fw-semibold">
+                            Estimated ATS Match
+                        </p>
+
+                        <div
+                            class="score-circle score-{{ result.score_color }}"
+                        >
+                            {{ result.score }}%
+                        </div>
+
+                        <h3 class="mt-3 fw-bold">
+                            {{ result.score_label }}
+                        </h3>
+
+                        <p class="text-muted">
+                            Matched {{ result.matched_count }} of
+                            {{ result.required_count }} detected job skills
+                        </p>
+
+                        <div class="progress mt-3">
+                            <div
+                                class="progress-bar bg-{{ result.score_color }}"
+                                style="width: {{ result.score }}%;"
+                            >
+                                {{ result.score }}%
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="row g-4">
+
+                    <div class="col-md-6">
+                        <div class="card result-card match-card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+
+                                <h4 class="fw-bold">
+                                    ✅ Matching Skills
+                                </h4>
+
+                                <p class="text-muted small">
+                                    Skills found in both your resume and the
+                                    job description.
+                                </p>
+
+                                <div class="skill-list">
+                                    {% if result.matching_skills %}
+
+                                        {% for skill in result.matching_skills %}
+                                        <span class="skill-badge matched">
+                                            {{ skill }}
+                                        </span>
+                                        {% endfor %}
+
+                                    {% else %}
+
+                                        <p class="text-muted">
+                                            No matching skills were detected.
+                                        </p>
+
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card result-card missing-card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+
+                                <h4 class="fw-bold">
+                                    ⚠️ Missing Skills
+                                </h4>
+
+                                <p class="text-muted small">
+                                    Skills mentioned in the job description
+                                    but not detected in your resume.
+                                </p>
+
+                                <div class="skill-list">
+                                    {% if result.missing_skills %}
+
+                                        {% for skill in result.missing_skills %}
+                                        <span class="skill-badge missing">
+                                            {{ skill }}
+                                        </span>
+                                        {% endfor %}
+
+                                    {% else %}
+
+                                        <span class="skill-badge matched">
+                                            No missing skills detected
+                                        </span>
+
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card suggestions-card border-0 shadow-sm mt-4">
+            <div class="card-body p-4 p-lg-5">
+
+                <h3 class="fw-bold mb-4">
+                    💡 Resume Improvement Suggestions
+                </h3>
+
+                <div class="row g-3">
+                    {% for suggestion in result.suggestions %}
+
+                    <div class="col-12">
+                        <div class="suggestion-item">
+                            <span class="suggestion-number">
+                                {{ loop.index }}
+                            </span>
+
+                            <p class="mb-0">
+                                {{ suggestion }}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-outline-primary px-4">
+                Analyze Another Resume
+            </a>
+        </div>
+
+    </section>
+
+    {% endif %}
+
+</main>
+
+<footer class="footer-section">
+    <div class="container text-center">
+        <p class="mb-1">
+            Resume-to-Job Match Analyzer
+        </p>
+
+        <p class="small text-white-50 mb-0">
+            An estimated skill-match analysis tool for educational and
+            career-preparation purposes.
+        </p>
+    </div>
+</footer>
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+></script>
+
+<script>
+    function showLoading() {
+        const button = document.getElementById("analyzeButton");
+
+        button.disabled = true;
+        button.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>' +
+            'Analyzing Resume...';
+    }
+
+    if (document.getElementById("results")) {
+        document.getElementById("results").scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+</script>
+
+</body>
+</html>
