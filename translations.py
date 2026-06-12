@@ -56,6 +56,7 @@ TRANSLATIONS = {
         "view_extracted": "View extracted resume text",
         "extracted_resume_text": "Extracted resume text",
         "no_major_points": "No major points returned.",
+        "api_key_missing": "Ollama API key is missing. Add it in Streamlit Secrets to enable AI resume content evaluation.",
     },
     "te": {
         "page_title": "రిజ్యూమ్‌మ్యాచ్",
@@ -109,6 +110,7 @@ TRANSLATIONS = {
         "view_extracted": "సంగ్రహించిన రిజ్యూమ్‌ పాఠ్యాన్ని చూడండి",
         "extracted_resume_text": "సంగ్రహించిన రిజ్యూమ్‌ పాఠ్యం",
         "no_major_points": "ఏ ప్రధాన పాయింట్‌లు రిటర్న్ చేయబడలేదు.",
+        "api_key_missing": "Ollama API కీ విడిపోయింది. AI రిజ్యూమ్‌ కంటెంట్ మూల్యాంకనం చేయడానికి Streamlit సిక్రెట్‌లలో దీన్ని జోడించండి.",
     },
     "hi": {
         "page_title": "रिज्यूमेमैच",
@@ -160,8 +162,9 @@ TRANSLATIONS = {
         "content_improvements": "ठोस सामग्री सुधार",
         "rewrite_suggestions": "पुनः लिखने के सुझाव",
         "view_extracted": "निकाले गए रिज्यूमे पाठ को देखें",
-        "extracted_resume_text": "निकाला गया रिज्यूमे पाठ",
-        "no_major_points": "कोई प्रमुख बिंदु नहीं दिए गए।",
+         "extracted_resume_text": "निकाला गया रिज्यूमे पाठ",
+         "no_major_points": "कोई प्रमुख बिंदु नहीं दिए गए।",
+         "api_key_missing": "ओलामा एपीआई कुंजी अनुपलब्ध है। एआई रिज्यूमे सामग्री मूल्यांकन सक्षम करने के लिए इसे Streamlit सीक्रेट में जोड़ें।",
     },
     "ta": {
         "page_title": "மறுசீரமைப்பு பொருத்தம்",
@@ -212,9 +215,10 @@ TRANSLATIONS = {
         "red_flags": "சிவப்பு கொடி",
         "content_improvements": "உறுதியான உள்ளடக்க மேம்பாடுகள்",
         "rewrite_suggestions": "மீண்டும் எழுதுவதற்கான பரிந்துரைகள்",
-        "view_extracted": "பிரித்தெடுக்கப்பட்ட மறுசீரமைப்பு உரையைக் காணுக",
-        "extracted_resume_text": "பிரித்தெடுக்கப்பட்ட மறுசீரமைப்பு உரை",
-        "no_major_points": "முக்கிய புள்ளிகள் திரும்பப் பெறப்படவில்லை.",
+         "view_extracted": "பிரித்தெடுக்கப்பட்ட மறுசீரமைப்பு உரையைக் காணுக",
+         "extracted_resume_text": "பிரித்தெடுக்கப்பட்ட மறுசீரமைப்பு உரை",
+         "no_major_points": "முக்கிய புள்ளிகள் திரும்பப் பெறப்படவில்லை.",
+         "api_key_missing": "ஓலாமா API விசை விடுபட்டுள்ளது. AI மறுசீரமைப்பு உள்ளடக்க மூல्यांकனத்தை இயக்க Streamlit சீக்ரெட்‌ஸ்‌ல் இதைச் சேர்க்கவும்.",
     }
 }
 
