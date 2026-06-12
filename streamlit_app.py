@@ -8,6 +8,18 @@ import fitz
 import ollama
 import streamlit as st
 
+from translations import get_text, get_available_languages
+
+
+# Initialize language in session state
+if "language" not in st.session_state:
+    st.session_state.language = "en"
+
+
+def get_t(key: str) -> str:
+    """Shorthand for getting translated text with current language."""
+    return get_text(key, st.session_state.language)
+
 
 st.set_page_config(
     page_title="ResumeMatch",
@@ -500,7 +512,7 @@ def calculate_keyword_score(resume_text: str, job_description: str):
 
 def render_chips(items, missing=False):
     if not items:
-        st.markdown('<p class="small-muted">None detected.</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="small-muted">{get_t("none_detected")}</p>', unsafe_allow_html=True)
         return
 
     css_class = "missing-chip" if missing else "chip"
@@ -510,116 +522,128 @@ def render_chips(items, missing=False):
 
 def render_list(items):
     if not items:
-        st.write("No major points returned.")
+        st.write(get_t("no_major_points"))
         return
 
     for item in items:
         st.markdown(f"- {item}")
 
 
-st.markdown('<div class="main-title">ResumeMatch</div>', unsafe_allow_html=True)
+# Language selector at the top
+col1, col2, col3 = st.columns([2, 1, 1])
+with col3:
+    languages = get_available_languages()
+    selected_lang = st.selectbox(
+        "🌐 Language",
+        options=list(languages.keys()),
+        format_func=lambda x: languages[x],
+        key="lang_selector",
+        label_visibility="collapsed"
+    )
+    st.session_state.language = selected_lang
+
+st.markdown(f'<div class="main-title">{get_t("main_title")}</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Upload a resume, paste a job description, and get both keyword ATS matching plus Ollama-powered resume content evaluation.</div>',
+    f'<div class="subtitle">{get_t("subtitle")}</div>',
     unsafe_allow_html=True
 )
 
-api_status = "configured" if get_ollama_key() else "missing"
-st.info(f"Ollama Cloud status: Model `{get_ollama_model()}` | API key: `{api_status}`")
+api_status = get_t("configured") if get_ollama_key() else get_t("missing")
+st.info(f"{get_t('ollama_status')}: Model `{get_ollama_model()}` | {get_t('api_key')}: `{api_status}`")
 
 left, right = st.columns([1, 1.35], gap="large")
 
 with left:
-    st.subheader("1. Upload resume")
+    st.subheader(get_t("upload_resume"))
     uploaded_file = st.file_uploader(
-        "Choose a text-based PDF resume",
+        get_t("choose_resume"),
         type=["pdf"]
     )
 
     st.caption(
-        "Privacy note: this cloud version temporarily extracts resume text and may send a short document sample to Ollama Cloud for AI validation/evaluation. Files are not saved by this app."
+        get_t("privacy_note")
     )
 
     force_ollama_validation = st.checkbox(
-        "Force Ollama Cloud validation for this run",
+        get_t("force_ollama"),
         value=True
     )
 
     enable_ai_evaluation = st.checkbox(
-        "Use Ollama to evaluate resume content against job description",
+        get_t("enable_ai"),
         value=True
     )
 
 with right:
-    st.subheader("2. Paste job description")
+    st.subheader(get_t("paste_jd"))
     job_description = st.text_area(
-        "Job description",
+        get_t("job_description"),
         height=260,
-        placeholder="Paste the full job description here..."
+        placeholder=get_t("jd_placeholder")
     )
 
-compare_clicked = st.button("Compare Resume")
+compare_clicked = st.button(get_t("compare_btn"))
 
 if compare_clicked:
     if not uploaded_file:
-        st.error("Please upload a resume PDF.")
+        st.error(get_t("error_no_resume"))
         st.stop()
 
     if not job_description.strip():
-        st.error("Please paste a job description.")
+        st.error(get_t("error_no_jd"))
         st.stop()
 
-    with st.spinner("Extracting resume text..."):
+    with st.spinner(get_t("extracting")):
         resume_text = extract_pdf_text(uploaded_file)
 
     if not resume_text:
-        st.error("Could not extract readable text from this PDF. Try a text-based PDF resume.")
+        st.error(get_t("error_no_text"))
         st.stop()
 
-    with st.spinner("Validating whether this is a genuine resume..."):
+    with st.spinner(get_t("validating")):
         resume_validation = validate_resume_with_ollama_cloud(
             resume_text,
             force_cloud_ai=force_ollama_validation
         )
 
     st.info(
-        f"Validation method: {resume_validation.validation_source} | "
-        f"Detected type: {resume_validation.detected_type} | "
-        f"Confidence: {resume_validation.confidence}%"
+        f"{get_t('validation_method')}: {resume_validation.validation_source} | "
+        f"{get_t('detected_type')}: {resume_validation.detected_type} | "
+        f"{get_t('confidence')}: {resume_validation.confidence}%"
     )
 
     if not resume_validation.is_resume:
-        st.error("The uploaded PDF does not appear to be a genuine resume or CV.")
+        st.error(get_t("error_not_resume"))
         st.warning(resume_validation.reason)
         st.stop()
 
-    with st.spinner("Calculating keyword ATS match..."):
+    with st.spinner(get_t("calculating_ats")):
         ats_score, matched_skills, missing_skills, resume_skills, suggestions = calculate_keyword_score(
             resume_text,
             job_description
         )
 
-    with st.expander("View keyword-based ATS details", expanded=False):
+    with st.expander(get_t("view_ats_details"), expanded=False):
         st.caption(
-            "This is a transparent baseline using exact skill/keyword matching. "
-            "The main evaluation below is generated by Ollama AI."
+            get_t("ats_baseline")
         )
 
         c1, c2, c3 = st.columns(3)
-        c1.metric("Keyword ATS Score", f"{ats_score}%")
-        c2.metric("Matched Skills", len(matched_skills))
-        c3.metric("Missing Skills", len(missing_skills))
+        c1.metric(get_t("keyword_ats_score"), f"{ats_score}%")
+        c2.metric(get_t("matched_skills"), len(matched_skills))
+        c3.metric(get_t("missing_skills"), len(missing_skills))
 
-        st.markdown("### Matching Skills")
+        st.markdown(f"### {get_t('matching_skills_title')}")
         render_chips(matched_skills)
 
-        st.markdown("### Missing Skills")
+        st.markdown(f"### {get_t('missing_skills_title')}")
         render_chips(missing_skills, missing=True)
 
     if enable_ai_evaluation:
         st.markdown("---")
-        st.subheader("Ollama AI Resume Content Evaluation")
+        st.subheader(get_t("ollama_ai_evaluation"))
 
-        with st.spinner("Ollama is evaluating resume quality and job alignment..."):
+        with st.spinner(get_t("evaluating")):
             ai_eval, ai_error = evaluate_resume_content_with_ollama(
                 resume_text=resume_text,
                 job_description=job_description,
@@ -632,40 +656,40 @@ if compare_clicked:
             st.error(ai_error)
             st.stop()
 
-        st.success(f"Ollama evaluated the resume content using `{get_ollama_model()}`.")
+        st.success(f"{get_t('ollama_evaluated')} `{get_ollama_model()}`.")
 
         m1, m2, m3 = st.columns(3)
-        m1.metric("AI Overall Fit", f"{ai_eval.overall_fit_score}%")
-        m2.metric("Resume Quality", f"{ai_eval.resume_quality_score}%")
-        m3.metric("Job Alignment", f"{ai_eval.job_alignment_score}%")
+        m1.metric(get_t("ai_overall_fit"), f"{ai_eval.overall_fit_score}%")
+        m2.metric(get_t("resume_quality"), f"{ai_eval.resume_quality_score}%")
+        m3.metric(get_t("job_alignment"), f"{ai_eval.job_alignment_score}%")
 
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
-        st.markdown("### AI Summary")
+        st.markdown(f"### {get_t('ai_summary')}")
         st.write(ai_eval.summary)
         st.markdown('</div>', unsafe_allow_html=True)
 
         a, b = st.columns(2)
 
         with a:
-            st.markdown("### Strengths")
+            st.markdown(f"### {get_t('strengths')}")
             render_list(ai_eval.strengths)
 
-            st.markdown("### Missing Keywords")
+            st.markdown(f"### {get_t('missing_keywords')}")
             render_list(ai_eval.missing_keywords)
 
         with b:
-            st.markdown("### Weaknesses")
+            st.markdown(f"### {get_t('weaknesses')}")
             render_list(ai_eval.weaknesses)
 
-            st.markdown("### Red Flags")
+            st.markdown(f"### {get_t('red_flags')}")
             render_list(ai_eval.red_flags)
 
-        st.markdown("### Concrete Content Improvements")
+        st.markdown(f"### {get_t('content_improvements')}")
         render_list(ai_eval.content_improvements)
 
-        st.markdown("### Rewrite Suggestions")
+        st.markdown(f"### {get_t('rewrite_suggestions')}")
         render_list(ai_eval.rewrite_suggestions)
 
     st.markdown("---")
-    with st.expander("View extracted resume text"):
-        st.text_area("Extracted resume text", resume_text, height=300)
+    with st.expander(get_t("view_extracted")):
+        st.text_area(get_t("extracted_resume_text"), resume_text, height=300)
