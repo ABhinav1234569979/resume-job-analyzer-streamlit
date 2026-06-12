@@ -26,29 +26,47 @@
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/">
-            ResumeMatch
+            {{ get_text('brand') }}
         </a>
 
-        <div class="nav-status">
-            <span class="status-dot"></span>
-            Local and private
+        <div class="d-flex align-items-center gap-3">
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                {{ get_text('status_text') }}
+            </div>
+            
+            <!-- Language Selector -->
+            <div class="language-selector">
+                <select class="form-select form-select-sm" onchange="changeLanguage(this.value)" style="width: auto;">
+                    {% for lang_code, lang_name in languages.items() %}
+                    <option value="{{ lang_code }}" {% if lang_code == current_language %}selected{% endif %}>
+                        {{ lang_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
     </div>
 </nav>
 
+<script>
+    function changeLanguage(lang) {
+        window.location.href = '/?lang=' + lang;
+    }
+</script>
+
 <header class="hero-section">
     <div class="container text-center">
         <span class="hero-badge">
-            Resume comparison
+            {{ get_text('resume_comparison') }}
         </span>
 
         <h1 class="display-4 fw-bold mt-3">
-            See how your resume fits the role
+            {{ get_text('hero_title') }}
         </h1>
 
         <p class="lead hero-description">
-            Choose your resume and paste a job description to discover
-            matching skills, missing keywords, and actionable improvements.
+            {{ get_text('hero_desc') }}
         </p>
     </div>
 </header>
@@ -57,7 +75,7 @@
 
     {% if error %}
     <div class="alert alert-danger alert-dismissible fade show shadow-sm">
-        <strong>Analysis failed:</strong> {{ error }}
+        <strong>{{ get_text('analysis_failed') }}</strong> {{ error }}
 
         <button
             type="button"
@@ -72,10 +90,10 @@
 
             <div class="row mb-4">
                 <div class="col">
-                    <h2 class="fw-bold">Compare resume and role</h2>
+                    <h2 class="fw-bold">{{ get_text('compare_heading') }}</h2>
 
                     <p class="text-muted mb-0">
-                        Add your resume and the full description of the role you are applying to.
+                        {{ get_text('compare_desc') }}
                     </p>
                 </div>
             </div>
@@ -85,8 +103,8 @@
                 <div class="feature-item">
                     <span class="feature-number">01</span>
                     <div>
-                        <strong>Upload resume</strong>
-                        <small>Text-based PDF</small>
+                        <strong>{{ get_text('upload_step') }}</strong>
+                        <small>{{ get_text('upload_step_desc') }}</small>
                     </div>
                 </div>
 
@@ -95,8 +113,8 @@
                 <div class="feature-item">
                     <span class="feature-number">02</span>
                     <div>
-                        <strong>Add the role</strong>
-                        <small>Paste the job description</small>
+                        <strong>{{ get_text('add_role_step') }}</strong>
+                        <small>{{ get_text('add_role_step_desc') }}</small>
                     </div>
                 </div>
 
@@ -105,8 +123,8 @@
                 <div class="feature-item">
                     <span class="feature-number">03</span>
                     <div>
-                        <strong>Review the match</strong>
-                        <small>Skills, gaps and suggestions</small>
+                        <strong>{{ get_text('review_step') }}</strong>
+                        <small>{{ get_text('review_step_desc') }}</small>
                     </div>
                 </div>
             </div>
@@ -121,16 +139,16 @@
 
                     <div class="col-lg-5">
                         <label class="form-label fw-semibold">
-                            Resume PDF
+                            {{ get_text('resume_pdf_label') }}
                         </label>
 
                         <div class="upload-box">
                             <div class="upload-icon">📄</div>
 
-                            <h5>Choose your resume</h5>
+                            <h5>{{ get_text('choose_resume') }}</h5>
 
                             <p class="small text-muted">
-                                PDF format, maximum 5 MB
+                                {{ get_text('pdf_format') }}
                             </p>
 
                             <input
@@ -143,10 +161,8 @@
                         </div>
 
                         <div class="privacy-box mt-3">
-                            <strong>Privacy:</strong>
-                            Your PDF is processed temporarily and deleted
-                            immediately after analysis. Resume verification
-                            runs locally through Ollama on this computer.
+                            <strong>{{ get_text('privacy_heading') }}</strong>
+                            {{ get_text('privacy_text') }}
                         </div>
                     </div>
 
@@ -155,14 +171,14 @@
                             for="job_description"
                             class="form-label fw-semibold"
                         >
-                            Job Description
+                            {{ get_text('job_desc_label') }}
                         </label>
 
                         <textarea
                             class="form-control job-textarea"
                             id="job_description"
                             name="job_description"
-                            placeholder="Paste the complete job description here..."
+                            placeholder="{{ get_text('job_desc_placeholder') }}"
                             required
                         >{{ request.form.get('job_description', '') }}</textarea>
                     </div>
@@ -175,7 +191,7 @@
                         type="submit"
                         class="btn btn-analyze btn-lg px-5"
                     >
-                        Compare Resume
+                        {{ get_text('compare_btn') }}
                     </button>
                 </div>
 
@@ -189,10 +205,10 @@
 
         <div class="text-center mb-4">
             <p class="text-uppercase result-eyebrow mb-2">
-                Analysis complete
+                {{ get_text('analysis_complete') }}
             </p>
 
-            <h2 class="fw-bold">Your Match Results</h2>
+            <h2 class="fw-bold">{{ get_text('match_results') }}</h2>
 
             <p class="text-muted">
                 {{ result.filename }}
@@ -202,20 +218,20 @@
                 <span
                     class="badge rounded-pill text-bg-success px-3 py-2"
                 >
-                    Resume format verified
+                    {{ get_text('resume_verified') }}
                 </span>
 
                 <span
                     class="badge rounded-pill text-bg-light px-3 py-2"
                 >
-                    Document confidence:
+                    {{ get_text('confidence_badge') }}:
                     {{ result.resume_confidence }}%
                 </span>
             </div>
 
             {% if result.resume_sections %}
             <p class="small text-muted">
-                Detected resume sections:
+                {{ get_text('detected_sections') }}:
                 {{ result.resume_sections | join(", ") }}
             </p>
             {% endif %}
@@ -228,7 +244,7 @@
                     <div class="card-body text-center p-4">
 
                         <p class="text-uppercase text-muted fw-semibold">
-                            Role Match
+                            {{ get_text('role_match') }}
                         </p>
 
                         <div
@@ -243,8 +259,8 @@
                         </h3>
 
                         <p class="text-muted">
-                            Matched {{ result.matched_count }} of
-                            {{ result.required_count }} detected job skills
+                            {{ get_text('matched_of') }} {{ result.matched_count }} {{ get_text('of') }}
+                            {{ result.required_count }} {{ get_text('detected_job_skills') }}
                         </p>
 
                         <div class="progress mt-3">
@@ -268,12 +284,11 @@
                             <div class="card-body p-4">
 
                                 <h4 class="fw-bold">
-                                    ✅ Matching Skills
+                                    {{ get_text('matched_skills_title') }}
                                 </h4>
 
                                 <p class="text-muted small">
-                                    Skills found in both your resume and the
-                                    job description.
+                                    {{ get_text('matched_skills_desc') }}
                                 </p>
 
                                 <div class="skill-list">
@@ -288,7 +303,7 @@
                                     {% else %}
 
                                         <p class="text-muted">
-                                            No matching skills were detected.
+                                            {{ get_text('no_matching') }}
                                         </p>
 
                                     {% endif %}
@@ -303,12 +318,11 @@
                             <div class="card-body p-4">
 
                                 <h4 class="fw-bold">
-                                    ⚠️ Missing Skills
+                                    {{ get_text('missing_skills_title') }}
                                 </h4>
 
                                 <p class="text-muted small">
-                                    Skills mentioned in the job description
-                                    but not detected in your resume.
+                                    {{ get_text('missing_skills_desc') }}
                                 </p>
 
                                 <div class="skill-list">
@@ -322,12 +336,16 @@
 
                                     {% else %}
 
-                                        <span class="skill-badge matched">
-                                            No missing skills detected
-                                        </span>
+                                        <p class="text-muted">
+                                            {{ get_text('no_missing') }}
+                                        </p>
 
                                     {% endif %}
                                 </div>
+
+                            </div>
+                        </div>
+                    </div>
 
                             </div>
                         </div>
@@ -342,7 +360,7 @@
             <div class="card-body p-4 p-lg-5">
 
                 <h3 class="fw-bold mb-4">
-                    💡 Resume Improvement Suggestions
+                    {{ get_text('suggestions_title') }}
                 </h3>
 
                 <div class="row g-3">
@@ -368,7 +386,7 @@
 
         <div class="text-center mt-4">
             <a href="/" class="btn btn-outline-primary px-4">
-                Analyze Another Resume
+                {{ get_text('analyze_another') }}
             </a>
         </div>
 
@@ -381,11 +399,11 @@
 <footer class="footer-section">
     <div class="container text-center">
         <p class="mb-1">
-            Resume & Job Match
+            {{ get_text('footer_title') }}
         </p>
 
         <p class="small text-white-50 mb-0">
-            A practical resume comparison tool for role-specific applications.
+            {{ get_text('footer_desc') }}
         </p>
     </div>
 </footer>
@@ -401,7 +419,7 @@
         button.disabled = true;
         button.innerHTML =
             '<span class="spinner-border spinner-border-sm me-2"></span>' +
-            'Analyzing Resume...';
+            '{{ get_text("analyzing") }}';
     }
 
     if (document.getElementById("results")) {
