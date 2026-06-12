@@ -319,7 +319,18 @@ def fast_resume_validation(text: str) -> ResumeValidation:
     )
 
 
-def validate_resume_with_ollama_cloud(text: str, force_cloud_ai: bool = True) -> ResumeValidation:
+def get_language_name(lang_code: str) -> str:
+    """Get full language name from language code."""
+    language_names = {
+        "en": "English",
+        "te": "Telugu",
+        "hi": "Hindi",
+        "ta": "Tamil"
+    }
+    return language_names.get(lang_code, "English")
+
+
+def validate_resume_with_ollama_cloud(text: str, force_cloud_ai: bool = True, language: str = "en") -> ResumeValidation:
     api_key = get_ollama_key()
 
     if not force_cloud_ai:
@@ -337,18 +348,21 @@ def validate_resume_with_ollama_cloud(text: str, force_cloud_ai: bool = True) ->
     model = get_ollama_model()
 
     sample = text[:5000]
+    lang_name = get_language_name(language)
 
     prompt = f"""
 You are a strict document classifier.
 
 Determine whether the uploaded PDF text is genuinely a resume/CV.
 
+IMPORTANT: Respond in {lang_name} language ONLY.
+
 Return JSON only with this exact schema:
 {{
   "is_resume": true,
   "confidence": 0,
   "detected_type": "Resume/CV or Non-resume document or Uncertain",
-  "reason": "short reason"
+  "reason": "short reason in {lang_name}"
 }}
 
 Rules:
@@ -397,23 +411,27 @@ def evaluate_resume_content_with_ollama(
     job_description: str,
     python_ats_score: int,
     matched_skills: list[str],
-    missing_skills: list[str]
+    missing_skills: list[str],
+    language: str = "en"
 ):
     api_key = get_ollama_key()
     if not api_key:
-        return None, "Ollama API key is missing. Add it in Streamlit Secrets to enable AI resume content evaluation."
+        return None, get_text("api_key_missing", language)
 
     client = get_ollama_client()
     model = get_ollama_model()
 
     resume_sample = resume_text[:7000]
     jd_sample = job_description[:4000]
+    lang_name = get_language_name(language)
 
     prompt = f"""
 You are an expert ATS resume reviewer and hiring evaluator.
 
 Your job is NOT only to check whether this is a resume.
 You must evaluate the resume content against the provided job description.
+
+IMPORTANT: Respond ENTIRELY in {lang_name} language. All content, including summary, strengths, weaknesses, suggestions, and red flags must be in {lang_name}.
 
 Use the resume text only. Do not invent experience, education, skills, or achievements.
 
@@ -422,13 +440,13 @@ Return valid JSON only with this exact schema:
   "overall_fit_score": 0,
   "resume_quality_score": 0,
   "job_alignment_score": 0,
-  "summary": "2-3 sentence direct evaluation",
-  "strengths": ["specific strength 1", "specific strength 2"],
-  "weaknesses": ["specific weakness 1", "specific weakness 2"],
+  "summary": "2-3 sentence direct evaluation in {lang_name}",
+  "strengths": ["specific strength 1 in {lang_name}", "specific strength 2 in {lang_name}"],
+  "weaknesses": ["specific weakness 1 in {lang_name}", "specific weakness 2 in {lang_name}"],
   "missing_keywords": ["keyword 1", "keyword 2"],
-  "content_improvements": ["specific improvement 1", "specific improvement 2"],
-  "rewrite_suggestions": ["rewrite suggestion 1", "rewrite suggestion 2"],
-  "red_flags": ["red flag 1", "red flag 2"]
+  "content_improvements": ["specific improvement 1 in {lang_name}", "specific improvement 2 in {lang_name}"],
+  "rewrite_suggestions": ["rewrite suggestion 1 in {lang_name}", "rewrite suggestion 2 in {lang_name}"],
+  "red_flags": ["red flag 1 in {lang_name}", "red flag 2 in {lang_name}"]
 }}
 
 Scoring rules:
@@ -603,7 +621,8 @@ if compare_clicked:
     with st.spinner(get_t("validating")):
         resume_validation = validate_resume_with_ollama_cloud(
             resume_text,
-            force_cloud_ai=force_ollama_validation
+            force_cloud_ai=force_ollama_validation,
+            language=st.session_state.language
         )
 
     st.info(
@@ -649,7 +668,8 @@ if compare_clicked:
                 job_description=job_description,
                 python_ats_score=ats_score,
                 matched_skills=matched_skills,
-                missing_skills=missing_skills
+                missing_skills=missing_skills,
+                language=st.session_state.language
             )
 
         if ai_error:
